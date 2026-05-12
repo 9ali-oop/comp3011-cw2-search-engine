@@ -423,6 +423,34 @@ alone.
 
 ---
 
-## 10. Open issues at submission time
+## 10. Complexity analysis
+
+Notation: `N` = number of indexed pages, `T` = number of unique
+terms, `L` = average tokens per page (after stopword removal),
+`Q` = number of tokens in the query, `df_t` = document frequency of
+term *t*.
+
+| Operation | Time | Space | Notes |
+|---|---|---|---|
+| `Crawler.crawl()` | `O(N · L)` HTML parse + `O(N · A)` link extract | `O(N)` for the `seen` set and frontier | Politeness wait dominates wall-clock time (6 s × N) |
+| `Indexer.add_document` | `O(L)` to tokenise + `O(L)` to merge postings | `O(L)` new postings | Hash-table lookup keyed by term |
+| `Indexer.tokenise` | `O(\|text\|)` via single regex pass | `O(L)` token list | |
+| `Indexer.save` | `O(N · L)` JSON serialise | `O(N · L)` on-disk | One-shot write |
+| `Indexer.load` | `O(N · L)` JSON parse | `O(N · L)` in memory | |
+| `SearchEngine.find` | `O(Q · log Q + min_t df_t + ∑_t df_t)` | `O(min_t df_t)` for the working set | We sort the postings by length first so the intersection starts with the smallest set - standard trick (Manning §1.3) |
+| `SearchEngine.print_term` | `O(df_t)` | `O(df_t)` | Single dict lookup |
+
+The query-time costs are dominated by the intersection, not the
+score: ranking adds an `O(\|hits\| · Q)` factor, but `\|hits\| ≤
+min_t df_t`, so the overall bound holds.
+
+Observed numbers from the perf tests:
+
+* Indexing 100 docs × 50 tokens - well under 100 ms on a 2024 laptop.
+* Find against 200-doc index with two intersecting query terms - under
+  500 ms, asserted by `TestPerformance::test_find_on_large_index_fast`.
+* Save/load round-trip of 200-doc index - visibly instantaneous.
+
+## 11. Open issues at submission time
 
 *(filled in once the full crawl finishes)*
