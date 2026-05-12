@@ -28,9 +28,8 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from typing import Iterable
 
-from .indexer import DocumentRecord, Indexer
+from .indexer import Indexer
 
 # Captures every "quoted phrase" in a raw query string.  The regex is
 # greedy inside the quotes but non-greedy across them so back-to-back

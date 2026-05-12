@@ -7,7 +7,6 @@ import pytest
 from src.indexer import Indexer
 from src.search import SearchEngine, SearchHit, TermPosting, _edit_distance
 
-
 # A tiny corpus used by most tests.  Tokens (after stop-word stripping):
 #   doc1: cat sat mat
 #   doc2: dog ran far

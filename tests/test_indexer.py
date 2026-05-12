@@ -8,11 +8,9 @@ import pytest
 
 from src.indexer import (
     DEFAULT_STOPWORDS,
-    DocumentRecord,
     INDEX_SCHEMA_VERSION,
     Indexer,
 )
-
 
 # ---------------------------------------------------------------------
 # Tokenisation

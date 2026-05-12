@@ -6,21 +6,17 @@ runs offline and finishes in milliseconds.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
-import pytest
 import requests
 import responses
 
 from src.crawler import (
+    DEFAULT_DELAY,
     Crawler,
     CrawlResult,
-    DEFAULT_DELAY,
     extract_links,
     normalise_url,
     same_host,
 )
-
 
 # ---------------------------------------------------------------------
 # normalise_url

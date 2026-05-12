@@ -9,12 +9,8 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
-import pytest
-
 from src.crawler import CrawlResult
-from src.indexer import Indexer
 from src.main import Shell, build_arg_parser, main
-
 
 SAMPLE_PAGES = {
     "http://x/1": "<body>The cat sat on the mat.</body>",
