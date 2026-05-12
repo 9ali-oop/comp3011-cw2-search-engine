@@ -46,7 +46,6 @@ import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 from bs4 import BeautifulSoup, Comment
 
@@ -271,7 +270,7 @@ class Indexer:
         )
 
     @classmethod
-    def load(cls, path: str | Path) -> "Indexer":
+    def load(cls, path: str | Path) -> Indexer:
         """Inverse of :meth:`save` - produce a ready-to-query Indexer."""
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
         if raw.get("version") != INDEX_SCHEMA_VERSION:
