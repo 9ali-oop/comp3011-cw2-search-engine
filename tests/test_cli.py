@@ -28,7 +28,10 @@ def _fake_crawler_factory(pages=SAMPLE_PAGES):
     """Return a callable that produces a stub crawler."""
 
     class _Fake:
-        def crawl(self):
+        def crawl(self, *, on_page=None, **_kw):
+            for url, html in pages.items():
+                if on_page is not None:
+                    on_page(url, html)
             return CrawlResult(pages=dict(pages))
 
     return _Fake
