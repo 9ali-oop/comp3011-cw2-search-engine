@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from src.indexer import Indexer
-from src.search import SearchEngine, SearchHit, TermPosting
+from src.search import SearchEngine, SearchHit, TermPosting, _edit_distance
 
 
 # A tiny corpus used by most tests.  Tokens (after stop-word stripping):
@@ -210,3 +210,148 @@ class TestEngineWiring:
         eng = SearchEngine(Indexer())
         assert eng.find("anything") == []
         assert eng.print_term("anything") == []
+
+
+# Phrase queries
+
+class TestPhraseQueries:
+    def _engine(self):
+        idx = Indexer()
+        idx.add_document("http://x/1", "<body>good friends matter</body>")
+        idx.add_document("http://x/2", "<body>friends are good</body>")
+        idx.add_document("http://x/3", "<body>good</body>")
+        idx.add_document("http://x/4", "<body>just friends</body>")
+        return SearchEngine(idx)
+
+    def test_phrase_requires_adjacency(self):
+        eng = self._engine()
+        hits = {h.url for h in eng.find('"good friends"')}
+        # doc1: positions good=0, friends=1 -> phrase matches
+        # doc2: positions friends=0, good=1 -> reversed, NO match
+        # doc3: missing friends
+        # doc4: missing good
+        assert hits == {"http://x/1"}
+
+    def test_phrase_with_reversed_words_does_not_match(self):
+        eng = self._engine()
+        hits = {h.url for h in eng.find('"friends good"')}
+        # Only doc2 has friends THEN good consecutively.
+        assert hits == {"http://x/2"}
+
+    def test_single_word_phrase_acts_like_term(self):
+        eng = self._engine()
+        # 'good' alone (quoted) -> same as plain 'good'.
+        assert (
+            {h.url for h in eng.find('"good"')}
+            == {h.url for h in eng.find('good')}
+        )
+
+    def test_phrase_plus_free_term(self):
+        idx = Indexer()
+        idx.add_document(
+            "http://x/1", "<body>good friends matter most</body>"
+        )
+        idx.add_document(
+            "http://x/2", "<body>good friends</body>"  # missing 'matter'
+        )
+        idx.add_document(
+            "http://x/3", "<body>friends good matter</body>"  # not adjacent
+        )
+        eng = SearchEngine(idx)
+        # Phrase 'good friends' + free term 'matter'.
+        hits = {h.url for h in eng.find('"good friends" matter')}
+        assert hits == {"http://x/1"}
+
+    def test_phrase_with_unknown_term_no_match(self):
+        eng = self._engine()
+        assert eng.find('"good xyzzy"') == []
+
+    def test_three_word_phrase(self):
+        idx = Indexer()
+        idx.add_document(
+            "http://x/1", "<body>good friends matter most</body>"
+        )
+        idx.add_document(
+            "http://x/2", "<body>good kind friends matter</body>"
+        )
+        eng = SearchEngine(idx)
+        # 'good friends matter' as a phrase: must be three consecutive.
+        hits = {h.url for h in eng.find('"good friends matter"')}
+        assert hits == {"http://x/1"}
+
+
+# Did-you-mean (edit distance)
+
+class TestDidYouMean:
+    def test_suggests_close_term(self):
+        idx = Indexer()
+        idx.add_document("http://x/1", "<body>einstein wisdom</body>")
+        eng = SearchEngine(idx)
+        # 'einstien' is one transposition away from 'einstein'.
+        suggestions = eng.did_you_mean("einstien")
+        assert "einstein" in suggestions
+
+    def test_no_suggestions_for_obviously_different_term(self):
+        idx = Indexer()
+        idx.add_document("http://x/1", "<body>cat dog fish</body>")
+        eng = SearchEngine(idx)
+        assert eng.did_you_mean("xyzzy") == []
+
+    def test_too_short_query_returns_empty(self):
+        idx = Indexer()
+        idx.add_document("http://x/1", "<body>cat</body>")
+        eng = SearchEngine(idx)
+        assert eng.did_you_mean("a") == []
+        assert eng.did_you_mean("") == []
+
+    def test_ranks_by_distance_then_df(self):
+        idx = Indexer()
+        # 'cat' appears in many docs; 'bat' in only one.  Both are 1
+        # edit away from 'cot' -> 'cat' should rank first (higher df).
+        for i in range(5):
+            idx.add_document(f"http://x/c{i}", "<body>cat</body>")
+        idx.add_document("http://x/b", "<body>bat</body>")
+        eng = SearchEngine(idx)
+        suggestions = eng.did_you_mean("cot")
+        assert suggestions[0] == "cat"
+        assert "bat" in suggestions
+
+    def test_self_match_excluded(self):
+        # If the term IS in the vocab, it should not be suggested for itself.
+        idx = Indexer()
+        idx.add_document("http://x/1", "<body>cat</body>")
+        eng = SearchEngine(idx)
+        assert "cat" not in eng.did_you_mean("cat")
+
+    def test_limit_enforced(self):
+        idx = Indexer()
+        # Build a few near-neighbours of 'cat'.
+        for w in ("bat", "cot", "car", "rat", "mat", "hat", "sat"):
+            idx.add_document(f"http://x/{w}", f"<body>{w}</body>")
+        eng = SearchEngine(idx)
+        suggestions = eng.did_you_mean("cat", limit=3)
+        assert len(suggestions) == 3
+
+
+class TestEditDistance:
+    def test_identical_strings(self):
+        assert _edit_distance("cat", "cat") == 0
+
+    def test_single_substitution(self):
+        assert _edit_distance("cat", "bat") == 1
+
+    def test_insertion(self):
+        assert _edit_distance("cat", "cart") == 1
+
+    def test_deletion(self):
+        assert _edit_distance("cart", "cat") == 1
+
+    def test_empty_strings(self):
+        assert _edit_distance("", "") == 0
+        assert _edit_distance("abc", "") == 3
+        assert _edit_distance("", "abc") == 3
+
+    def test_ceiling_early_exit(self):
+        # 'abcdef' vs 'uvwxyz' has distance 6 - with a ceiling of 2 we
+        # should return 3 (ceiling + 1), confirming the early-exit path.
+        assert _edit_distance("abcdef", "uvwxyz", ceiling=2) == 3
