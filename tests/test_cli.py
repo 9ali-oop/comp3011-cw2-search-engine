@@ -134,6 +134,36 @@ class TestFindCommand:
         shell.execute("find    ")
         assert "usage: find" in out.getvalue()
 
+    def test_find_offers_did_you_mean_on_miss(self, tmp_path):
+        # Corpus contains 'indifference'; mistyped query should trigger
+        # a 'did you mean' hint.
+        pages = {
+            "http://x/1": "<body>Our greatest weakness lies in indifference.</body>",
+        }
+        shell, out = _make_shell(tmp_path, pages=pages)
+        shell.execute("build")
+        out.truncate(0)
+        out.seek(0)
+        shell.execute("find indiffrence")
+        text = out.getvalue()
+        assert "no pages match" in text
+        assert "did you mean" in text and "indifference" in text
+
+    def test_find_phrase_query_supported(self, tmp_path):
+        pages = {
+            "http://x/1": "<body>Good friends matter</body>",
+            "http://x/2": "<body>friends are good</body>",
+        }
+        shell, out = _make_shell(tmp_path, pages=pages)
+        shell.execute("build")
+        out.truncate(0)
+        out.seek(0)
+        shell.execute('find "good friends"')
+        text = out.getvalue()
+        assert "result(s) for" in text
+        assert "http://x/1" in text
+        assert "http://x/2" not in text
+
 
 class TestPrintCommand:
     def test_print_dumps_postings(self, tmp_path):

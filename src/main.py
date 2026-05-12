@@ -198,7 +198,13 @@ class Shell:
             )
 
     def cmd_find(self, query: str) -> None:
-        """Look up pages matching *query* (multi-word AND, ranked)."""
+        """Look up pages matching *query* (multi-word AND, ranked).
+
+        Quoted spans (``find "good friends"``) are treated as phrase
+        queries that require adjacency.  Zero-result queries trigger a
+        "did you mean?" hint computed by edit distance against the
+        vocabulary.
+        """
         if not self._require_engine():
             return
         if not query.strip():
@@ -207,11 +213,25 @@ class Shell:
         hits = self.engine.find(query)
         if not hits:
             self._echo(f"no pages match {query!r}")
+            self._maybe_suggest_alternatives(query)
             return
         self._echo(f"{len(hits)} result(s) for {query!r}:")
         for h in hits:
             label = f" — {h.title}" if h.title else ""
             self._echo(f"  [{h.score:.3f}] {h.url}{label}")
+
+    def _maybe_suggest_alternatives(self, query: str) -> None:
+        """Print a 'did you mean?' line for each unknown query token."""
+        tokens = self.engine._tokenise_query(query)
+        for token in tokens:
+            if self.engine.index.term_postings(token):
+                continue
+            suggestions = self.engine.did_you_mean(token)
+            if suggestions:
+                joined = ", ".join(suggestions)
+                self._echo(
+                    f"  did you mean: {joined}?  (instead of {token!r})"
+                )
 
     # -------------------- helpers --------------------------------
 
