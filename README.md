@@ -344,6 +344,17 @@ Known constraints (called out so the marker — and any future maintainer
 * Stop-word handling is binary: words are either kept or dropped.  No
   separate "soft" stop-list.
 
+## GenAI declaration
+
+This project was built with AI pair-programming using Claude
+(Anthropic), accessed via the University's secure Copilot route. AI
+generated draft code and tests; design decisions, verification, and
+trade-off analysis are recorded in [`technical_log.md`](technical_log.md).
+A critical reflection on the experience — including specific bugs AI
+introduced, scope decisions it under-estimated, and what working with
+AI taught me about IR engineering — lives in
+[`REFLECTION.md`](REFLECTION.md).
+
 ## References
 
 * COMP3011 lecture slides 9–12 (crawling, link analysis, parsing &
