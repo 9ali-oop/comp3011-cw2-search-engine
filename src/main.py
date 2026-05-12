@@ -133,7 +133,16 @@ class Shell:
         self._echo(f"crawling {self.seed_url} (politeness {self.delay}s)…")
         crawler = self._crawler_factory()
         start = time.monotonic()
-        result = crawler.crawl()
+        # Periodic progress callback so the user has something to look
+        # at during the (multi-minute) full live crawl.
+        counter = {"n": 0}
+
+        def on_page(url: str, _html: str) -> None:
+            counter["n"] += 1
+            if counter["n"] % 10 == 0 or counter["n"] <= 3:
+                self._echo(f"  [{counter['n']:>4}] {url}")
+
+        result = crawler.crawl(on_page=on_page)
         crawl_secs = time.monotonic() - start
 
         self._echo(
