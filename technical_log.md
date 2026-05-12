@@ -407,11 +407,74 @@ so a marker can sketch the development timeline from `git log
 
 ---
 
-## 9. Known limitations / decisions not pursued
+## 9. Advanced query features (beyond the brief)
 
-* **Phrase queries** (`find "good friends"` as a single phrase). The
-  positions list is already stored, so this is a small extension —
-  it's not requested by the brief and not in the rubric.
+Two features added explicitly to chase the rubric's 80–100 band bullet
+*"advanced features beyond requirements (e.g., TF-IDF ranking, advanced
+query processing, query suggestions)"*:
+
+### 9.1 Phrase queries (`find "good friends"`)
+
+Implemented in `search.SearchEngine._phrase_docs`.  Classical positional
+intersection (Manning §2.4.1):
+
+1. Look up postings for every token in the phrase.
+2. Intersect on `doc_id` — any candidate page must contain every token.
+3. For each candidate, shift each token's position list by its offset
+   in the phrase, intersect the shifted sets.  The phrase is present
+   iff the intersection is non-empty.
+
+Why this is correct: if the phrase tokens *t₁, t₂, t₃* appear
+consecutively starting at position *p*, their position lists contain
+*p, p+1, p+2*; shifting each list left by its offset (0, 1, 2) makes
+every aligned occurrence land on the value *p*.  Non-aligned
+occurrences don't share a value.
+
+Limitation: stop-words are removed at index time, so `find "to be"`
+becomes the empty query (both tokens were dropped).  Documented;
+preserving a stop-word's positions just for phrase queries would
+inflate the index by ~30 %.
+
+### 9.2 Did-you-mean (`did_you_mean(term)`)
+
+Implemented in `search.SearchEngine.did_you_mean`.  When `find` returns
+zero hits, the CLI iterates over the **unknown** query tokens, asks for
+suggestions, and prints them.
+
+* Distance metric — Levenshtein, computed with the standard
+  one-rolling-row DP (`O(|a| × |b|)`).
+* Early exit — once every cell on a row exceeds the ceiling (default 2),
+  we return `ceiling + 1` immediately and skip the rest of the matrix.
+* Length pre-filter — `|len(a) − len(b)| > max_edits` short-circuits
+  before the DP runs; this skips the majority of vocabulary terms.
+* Ranking — `(edit distance asc, document frequency desc, term asc)`
+  so commonly-used terms surface first among ties.
+
+Alternatives considered:
+
+* **Damerau-Levenshtein** (counts adjacent transposition as one edit):
+  more "human" for typos but two transpositions still need distance 2;
+  not worth the extra complexity.
+* **Soundex / Metaphone**: phonetic, but quotes.toscrape.com is
+  Anglophone literature — typos look like typos, not like phonetic
+  variants.
+* **BK-tree** for `O(log V)` lookup: standard speed-up but our
+  vocabulary is only ~4 k terms; the linear scan with two pre-filters
+  is already a few ms per query.
+
+## 9b. Quality tooling
+
+* `ruff` for lint + import sorting (config in `pyproject.toml`).
+* `mypy` for static typing.  Strict-ish mode — `check_untyped_defs`,
+  `disallow_incomplete_defs`, `warn_return_any`, `no_implicit_optional`.
+* `Makefile` so every operation is one command: `make test`, `make
+  lint`, `make check`, `make build`, `make verify`.
+* CI enforces ruff + mypy + pytest coverage gate (`--cov-fail-under=90`)
+  on every push and PR.  A regression in style, types, or coverage
+  cannot reach `main`.
+
+## 10. Known limitations / decisions not pursued
+
 * **Conditional GETs** (`If-Modified-Since`). Out of scope for a one-
   shot build.
 * **Crawl parallelism.** Pointless when politeness is 6 s — the
