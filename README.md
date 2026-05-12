@@ -2,8 +2,10 @@
 
 [![CI](https://github.com/9ali-oop/comp3011-cw2-search-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/9ali-oop/comp3011-cw2-search-engine/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org)
-[![Tests](https://img.shields.io/badge/tests-136%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-156%20passing-brightgreen.svg)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](#testing)
+[![Ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+[![Mypy](https://img.shields.io/badge/types-mypy-2A6DB2.svg)](https://www.mypy-lang.org/)
 
 > Repository: <https://github.com/9ali-oop/comp3011-cw2-search-engine>
 
@@ -49,8 +51,11 @@ Coursework 2 (University of Leeds, 2025/26).
 | Full-word matching | by design: tokens are compared exactly, never as substrings - `friends` ≠ `friendship` |
 | Case-insensitive search | both index and query tokens are folded to lower-case |
 | Multi-word queries | AND semantics, ranked by sum of TF-IDF over query terms |
+| **Phrase queries** | `find "good friends"` matches only pages where tokens are *consecutive* (uses stored positions, Manning §2.4.1) |
+| **Did-you-mean** | failed queries trigger Levenshtein-based suggestions: `find indiffrence` → "did you mean: indifference?" |
 | JSON persistence | single `index.json` file with schema version |
-| 130 unit tests | 98% line coverage, all HTTP mocked, full suite runs in ~1.1 s |
+| Quality enforced | `ruff` + `mypy` + `pytest --cov-fail-under=90` gated in CI |
+| 156 unit tests | 98% line coverage, all HTTP mocked, full suite runs in ~1.6 s |
 
 ## Quickstart
 
@@ -117,6 +122,39 @@ find <words…>         find pages containing every word in the query
 help                  print this list
 quit / exit           leave the shell
 ```
+
+### Advanced query features
+
+Beyond the brief's required commands, the engine ships two textbook IR
+features:
+
+**Phrase queries** - wrap the query in double quotes:
+
+```
+> find good friends            # AND across the two terms
+> find "good friends"          # phrase: tokens must be consecutive
+> find "good friends" matter   # phrase AND a free term
+```
+
+The phrase implementation does a positional intersection over the
+posting lists already stored by the indexer (Manning §2.4.1): each
+token's positions are shifted by their offset in the phrase, then the
+shifted sets are intersected - a non-empty result means the phrase is
+present.
+
+**Did-you-mean** - when `find` returns zero hits, the CLI runs each
+unknown query token through `did_you_mean`, which computes Levenshtein
+distance against the vocabulary (with an early-exit ceiling and a
+length pre-filter) and surfaces the closest matches:
+
+```
+> find indiffrence
+no pages match 'indiffrence'
+  did you mean: indifference?  (instead of 'indiffrence')
+```
+
+Ranking is `(edit distance asc, df desc, term asc)` so commonly-used
+terms surface first among ties.
 
 ### Sample session
 
