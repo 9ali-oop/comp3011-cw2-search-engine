@@ -1,5 +1,12 @@
 # COMP3011 CW2 - Search Engine Tool
 
+[![CI](https://github.com/9ali-oop/comp3011-cw2-search-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/9ali-oop/comp3011-cw2-search-engine/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org)
+[![Tests](https://img.shields.io/badge/tests-136%20passing-brightgreen.svg)](#testing)
+[![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](#testing)
+
+> Repository: <https://github.com/9ali-oop/comp3011-cw2-search-engine>
+
 A small but complete search engine: crawl
 [`quotes.toscrape.com`](https://quotes.toscrape.com/), build an inverted
 index over its pages, and run multi-word queries against the index from
@@ -69,8 +76,8 @@ Requires **Python 3.10+** (uses `list[str]` PEP 604 union syntax in
 type hints).
 
 ```bash
-git clone <repo-url> search_engine
-cd search_engine
+git clone https://github.com/9ali-oop/comp3011-cw2-search-engine.git
+cd comp3011-cw2-search-engine
 python -m pip install -r requirements.txt
 ```
 
