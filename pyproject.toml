@@ -1,0 +1,67 @@
+[project]
+name = "search-engine"
+version = "1.1.0"
+description = "COMP3011 CW2 — polite crawler + inverted index + TF-IDF search REPL for quotes.toscrape.com"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "9ali-oop" }]
+dependencies = [
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "responses>=0.25.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+]
+
+[project.scripts]
+search-engine = "src.main:main"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "C4",  # comprehensions
+    "SIM", # simplifications
+    "PIE", # misc bugs
+]
+ignore = [
+    "E501",  # line too long — formatting handled by `ruff format`
+    "B008",  # function call in argument default (we use dataclass defaults)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["F841", "SIM117"]  # tests sometimes need unused bindings
+
+[tool.mypy]
+python_version = "3.10"
+strict = false           # gradual; tighten over time
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+exclude = [
+    "tests/",
+    "verify_index\\.py",
+    "post_build_report\\.py",
+]
+
+[[tool.mypy.overrides]]
+module = "responses"
+ignore_missing_imports = true

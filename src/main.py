@@ -18,13 +18,15 @@ without touching ``sys.stdout``.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import sys
 import time
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Iterable, TextIO
+from typing import Any, TextIO
 
-from .crawler import Crawler, DEFAULT_DELAY, DEFAULT_USER_AGENT
+from .crawler import DEFAULT_DELAY, DEFAULT_USER_AGENT, Crawler
 from .indexer import Indexer
 from .search import SearchEngine
 
@@ -60,8 +62,8 @@ class Shell:
         delay: float = DEFAULT_DELAY,
         user_agent: str = DEFAULT_USER_AGENT,
         out: TextIO | None = None,
-        crawler_factory=None,
-        indexer_factory=None,
+        crawler_factory: Callable[[], Any] | None = None,
+        indexer_factory: Callable[[], Indexer] | None = None,
     ) -> None:
         self.seed_url = seed_url
         self.index_path = Path(index_path)
@@ -181,7 +183,8 @@ class Shell:
 
     def cmd_print(self, term: str) -> None:
         """Dump the inverted-index entry for *term*."""
-        if not self._require_engine():
+        if self.engine is None:
+            self._echo("no index loaded — run 'build' or 'load' first")
             return
         if not term:
             self._echo("usage: print <word>")
@@ -205,7 +208,8 @@ class Shell:
         "did you mean?" hint computed by edit distance against the
         vocabulary.
         """
-        if not self._require_engine():
+        if self.engine is None:
+            self._echo("no index loaded — run 'build' or 'load' first")
             return
         if not query.strip():
             self._echo("usage: find <words…>")
@@ -222,11 +226,14 @@ class Shell:
 
     def _maybe_suggest_alternatives(self, query: str) -> None:
         """Print a 'did you mean?' line for each unknown query token."""
-        tokens = self.engine._tokenise_query(query)
+        engine = self.engine
+        if engine is None:  # pragma: no cover — only called after engine check
+            return
+        tokens = engine._tokenise_query(query)
         for token in tokens:
-            if self.engine.index.term_postings(token):
+            if engine.index.term_postings(token):
                 continue
-            suggestions = self.engine.did_you_mean(token)
+            suggestions = engine.did_you_mean(token)
             if suggestions:
                 joined = ", ".join(suggestions)
                 self._echo(
@@ -242,12 +249,6 @@ class Shell:
             user_agent=self.user_agent,
             obey_robots=True,
         )
-
-    def _require_engine(self) -> bool:
-        if self.engine is None:
-            self._echo("no index loaded — run 'build' or 'load' first")
-            return False
-        return True
 
     def _echo(self, msg: str, *, end: str = "\n") -> None:
         self.out.write(msg + end)
@@ -306,10 +307,8 @@ def main(argv: list[str] | None = None) -> int:
     # exists only on TextIOWrapper, so guard it.
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
-            try:
+            with contextlib.suppress(AttributeError, ValueError):
                 stream.reconfigure(encoding="utf-8")
-            except (AttributeError, ValueError):
-                pass
     logging.basicConfig(
         level=logging.INFO if args.verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
