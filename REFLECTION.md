@@ -90,11 +90,11 @@ against. It costs almost nothing here, but the habit, multiplied
 across a real codebase, becomes the kind of noise that makes systems
 harder to reason about.
 
-The reflection is not that AI is bad at writing safe code — it is that
-AI cannot tell which "defensive" patterns are load-bearing and which
-are noise, because making that judgment requires knowing what *can*
-actually go wrong in this specific context. That knowledge is what an
-engineer brings; AI brings the average of a corpus.
+AI is fine at writing safe code. What it cannot do is tell which
+defensive patterns are load-bearing and which are noise; that judgment
+requires knowing what can actually go wrong in this specific context.
+That knowledge is what an engineer brings; AI brings the average of a
+corpus.
 
 ## 5. What I now believe about learning IR with AI
 
@@ -116,8 +116,8 @@ minute; understanding *why* a logarithm and not a square root took
 a sit-down with Manning §6.2 and the realisation that English term
 frequencies are Zipfian — heavy-tailed, with a few terms repeating
 enormously. The logarithm is doing damping calibrated to that
-distribution. Until I had that picture, the `1 + log tf` line was
-syntactic knowledge wearing the costume of conceptual knowledge.
+distribution. Until I had that picture, I could use the formula but not
+explain it.
 
 The risk-pattern this creates is specific and worth naming. **AI
 collapses the time between *seeing* a technique and *using* it, but
@@ -153,17 +153,14 @@ coursework deliverable — *implement a tokeniser, an index, a query
 parser* — was a good measure of understanding when the implementation
 work was non-trivial. With AI, that work is hours, not weeks. The
 signal-to-noise ratio of "did you write working code?" has collapsed.
-What remains genuinely hard, and what sections 1 and 2 of this
-reflection are *actually* about, is **verification under
-distributional uncertainty**: noticing that "quotes" and "scrape"
-have anomalously high `df` and recognising the cause is a `<title>`
+**Verification under distributional uncertainty** is the hard part,
+and it is what §1 and §2 are about. Noticing that "quotes" and
+"scrape" have anomalously high `df` and tracing it to a `<title>`
 leak; noticing that a UA `setdefault` no-op is silently degrading
 politeness only by reading what the wire is sending. These are
 *empirical* skills — they require generating real data, looking at
 distributions, and asking "is this what I expected?" — and AI is bad
-at them precisely because it has no runtime feedback loop. They are
-also the skills the field rewards in practice: production IR
-engineers spend more time in dashboards than in editors.
+at them precisely because it has no runtime feedback loop.
 
 If I were redesigning COMP3011 CW2 for an AI-fluent cohort, I would
 **invert the deliverable**. Instead of asking students to *write* a
@@ -203,9 +200,8 @@ that takes AI use seriously.
 ## 8. Headline takeaway
 
 AI made me dramatically faster at building a working IR system. It
-did not, on its own, make me a better information-retrieval engineer.
-Those two things look identical from the outside until something
-breaks; the second one is what I can demonstrate in the viva.
+did not, on its own, make me a better IR engineer. The viva is where
+that distinction gets tested.
 
 ---
 
