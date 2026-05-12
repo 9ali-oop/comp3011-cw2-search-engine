@@ -9,15 +9,12 @@ cannot.
 from __future__ import annotations
 
 import time
-from pathlib import Path
 
-import pytest
 import responses
 
 from src.crawler import Crawler
 from src.indexer import Indexer
 from src.search import SearchEngine
-
 
 SITE = "http://fake.test"
 
