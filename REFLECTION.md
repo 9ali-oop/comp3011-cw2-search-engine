@@ -100,7 +100,8 @@ engineer brings; AI brings the average of a corpus.
 
 The textbook claim is that AI changes what you learn — that you spend
 less time on syntax and more on judgment. Doing this coursework, I
-think the claim is half right and half misleading.
+think the claim is half right and half misleading, and the half that
+is misleading matters more than the half that is true.
 
 What is true: I learned the *shape* of an inverted index, of TF-IDF
 ranking, of positional intersection for phrase queries, of
@@ -108,18 +109,32 @@ edit-distance for suggestions, in a few days. Without AI that
 ramp-up would have been slower. Working with AI is a magnifying glass
 for breadth.
 
-What is misleading: depth still has to come from somewhere. When I
-read AI's implementation of the sub-linear TF formula
-(`1 + log tf`), it took me a minute to *understand* it but a longer
-sit-down to *internalise* why a logarithm rather than a square root
-or a hand-tuned cap — what assumption about term distributions
-justifies that choice (Zipfian heavy-tail, where a few terms repeat
-enormously). AI hands you the *answer*; the work of converting
-answers into intuitions is still mine, and it is the part the viva
-will examine. **I do not believe a marker should mistake "I shipped
-this with AI" for "I understand this."**
+What is misleading is the implicit promise that breadth is enough.
+AI's output is *the answer*, not *the derivation*. When AI proposed
+sub-linear TF (`1 + log tf`) I had the function in my code in under a
+minute; understanding *why* a logarithm and not a square root took
+a sit-down with Manning §6.2 and the realisation that English term
+frequencies are Zipfian — heavy-tailed, with a few terms repeating
+enormously. The logarithm is doing damping calibrated to that
+distribution. Until I had that picture, the `1 + log tf` line was
+syntactic knowledge wearing the costume of conceptual knowledge.
 
-## 6. The ethical dimension I cannot ignore
+The risk-pattern this creates is specific and worth naming. **AI
+collapses the time between *seeing* a technique and *using* it, but
+not the time between *using* it and *understanding* it.** A naive
+learner working with AI ships systems they cannot defend, because the
+working-system feedback loop is much shorter than the
+understanding-system feedback loop. The discipline that I had to
+impose on myself — and that I would tell next year's cohort to
+impose on themselves — is roughly: *every time AI hands me a formula
+or a data structure I would not have produced on my own, I do not
+ship it until I can write a paragraph in my own words explaining
+which property of the data the choice exploits.* The technical log
+contains those paragraphs. They are what the viva should examine.
+I do not believe a marker should mistake "I shipped this with AI"
+for "I understand this."
+
+## 6. The ethical and pedagogical dimension I cannot ignore
 
 The brief sanctions AI use (GREEN category) and rewards critical
 reflection. But there is a real tension: a project that an AI could
@@ -132,11 +147,44 @@ not justify on the record, and the technical log records every
 alternative considered, in my own framing, before AI generated code
 for the chosen one.
 
-The broader implication, beyond this submission, is that the skill
-being assessed in IR coursework should probably evolve. "Can you
-implement a tokeniser?" is a less interesting question now than "can
-you tell when a tokeniser is wrong on your data?" The latter is what
-sections 1 and 2 of this reflection are actually about.
+The broader implication is more interesting, and I think it deserves
+a serious argument rather than a one-liner. The standard IR
+coursework deliverable — *implement a tokeniser, an index, a query
+parser* — was a good measure of understanding when the implementation
+work was non-trivial. With AI, that work is hours, not weeks. The
+signal-to-noise ratio of "did you write working code?" has collapsed.
+What remains genuinely hard, and what sections 1 and 2 of this
+reflection are *actually* about, is **verification under
+distributional uncertainty**: noticing that "quotes" and "scrape"
+have anomalously high `df` and recognising the cause is a `<title>`
+leak; noticing that a UA `setdefault` no-op is silently degrading
+politeness only by reading what the wire is sending. These are
+*empirical* skills — they require generating real data, looking at
+distributions, and asking "is this what I expected?" — and AI is bad
+at them precisely because it has no runtime feedback loop. They are
+also the skills the field rewards in practice: production IR
+engineers spend more time in dashboards than in editors.
+
+If I were redesigning COMP3011 CW2 for an AI-fluent cohort, I would
+**invert the deliverable**. Instead of asking students to *write* a
+search engine, hand them an AI-generated reference implementation
+seeded with three subtle, distribution-level bugs — for example a
+tokeniser that mistakenly preserves the word "the" because the
+stop-list ships with capitalised entries that fail to match; a
+boilerplate strip that misses a `<aside class="tag-cloud">` sidebar
+on a specific template; a politeness window that uses `time.time()`
+instead of `time.monotonic()` and silently breaks under a clock
+adjustment. Grade on **diagnosis quality**: the verification
+artifacts produced (top-term distributions, position histograms, df
+anomaly reports), the empirical evidence cited, and the precision of
+the bug reports. The brief's existing rubric already gestures at this
+under "robust implementation handling edge cases" (60–69 band) and
+"complexity analysis and benchmarking" (70–79 band), but neither
+specifically rewards *finding* problems someone else introduced —
+only avoiding them yourself. The inverted brief would. And it would
+measure the only skill in this whole pipeline that AI cannot trivially
+short-circuit, which is the right pedagogical target for a course
+that takes AI use seriously.
 
 ## 7. What I would do differently
 
@@ -167,20 +215,18 @@ breaks; the second one is what I can demonstrate in the viva.
 
 > Read at a steady ~140 wpm this is exactly 30 seconds.
 
-"I used Claude as a pair-programmer. Two examples taught me the most.
-First, the crawler set its User-Agent with
-`session.headers.setdefault` — idiomatic, plausible, and silently
-broken because Requests ships a default header. I only caught it
-because my test asserted the runtime value, not the call path.
-Second, the indexer leaked the `<title>` tag — every page on
-quotes.toscrape.com has the same title, so two words ranked first by
-document frequency until I looked at the real data. Both bugs taught
-me the same lesson: AI is excellent at code that *reads* right, and
-the engineer's real job is verifying that runtime behaviour matches
-intent. AI also defaults to *under-claiming* scope — phrase queries
-and did-you-mean were rubric wins it flagged as 'future work'; I
-overrode that. The viva will measure understanding, not output, and
-that is the right place to draw the line."
+"I used Claude as a pair-programmer. Two bugs taught me the most.
+The crawler set its User-Agent with `setdefault` — idiomatic,
+plausible, and silently broken because Requests ships a default
+header. I only caught it because my test asserted the runtime value.
+The indexer leaked the `<title>` tag — every page on the corpus had
+the same title, so two words ranked first by document frequency
+until I looked at the real data. Both bugs taught one lesson: AI is
+excellent at code that *reads* right; the engineer's job is
+verifying that runtime behaviour matches intent. That's the skill an
+AI-fluent IR course should specifically test — not implementation,
+but diagnosis under distributional uncertainty. The viva measures
+understanding, not output; that's the right place to draw the line."
 
 *Word count: ~1,350 essay + 30-second script. Specific examples
 cited (UA `setdefault`, `<title>` leak, conservative scope,
