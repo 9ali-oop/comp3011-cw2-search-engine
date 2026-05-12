@@ -27,6 +27,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+          python -m pip install ruff mypy
+
+      - name: Lint (ruff)
+        run: python -m ruff check src/ tests/
+
+      - name: Type-check (mypy)
+        run: python -m mypy src/
 
       - name: Run tests with coverage
         run: |

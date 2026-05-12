@@ -26,8 +26,8 @@ from __future__ import annotations
 import logging
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse, urlunparse
 from urllib.robotparser import RobotFileParser
 
@@ -102,7 +102,11 @@ def extract_links(html: str, base_url: str) -> list[str]:
     soup = BeautifulSoup(html, "html.parser")
     out: list[str] = []
     for anchor in soup.find_all("a", href=True):
-        href = anchor["href"]
+        # BS4 attribute access returns ``str | list[str] | None`` in
+        # recent versions; coerce to str — multi-valued href attributes
+        # are not a real thing for ``<a>``.
+        href_raw = anchor["href"]
+        href = href_raw if isinstance(href_raw, str) else " ".join(href_raw)
         if not href or href.startswith(("mailto:", "javascript:", "tel:")):
             continue
         try:
@@ -231,7 +235,7 @@ class Crawler:
                     if "html" not in ctype and ctype != "":
                         logger.info("skip non-HTML %s (%s)", url, ctype)
                         return None
-                    return resp.text
+                    return str(resp.text)
                 if 400 <= resp.status_code < 500:
                     logger.info("HTTP %s for %s — giving up", resp.status_code, url)
                     return None
