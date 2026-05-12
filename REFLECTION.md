@@ -130,9 +130,9 @@ impose on themselves — is roughly: *every time AI hands me a formula
 or a data structure I would not have produced on my own, I do not
 ship it until I can write a paragraph in my own words explaining
 which property of the data the choice exploits.* The technical log
-contains those paragraphs. They are what the viva should examine.
-I do not believe a marker should mistake "I shipped this with AI"
-for "I understand this."
+contains those paragraphs. They are what the code-walkthrough segment
+of the video has to make legible. I do not believe a marker should
+mistake "I shipped this with AI" for "I understand this."
 
 ## 6. The ethical and pedagogical dimension I cannot ignore
 
@@ -140,8 +140,11 @@ The brief sanctions AI use (GREEN category) and rewards critical
 reflection. But there is a real tension: a project that an AI could
 *plausibly* have produced unaided is a project the assessment cannot
 straightforwardly use to measure a *student's* understanding. The
-brief addresses this by making the video and viva-style explanation
-load-bearing, which is right. My own resolution is to treat AI as a
+brief addresses this by making the 5-minute video walkthrough the
+primary assessment component and requiring the student to explain
+every line of their code in it — meaning the marker has to *see* me
+defend the choices, not just see the build run. That is the right
+call. My own resolution is to treat AI as a
 collaborator I can outvote: I never accepted a design decision I could
 not justify on the record, and the technical log records every
 alternative considered, in my own framing, before AI generated code
@@ -200,8 +203,9 @@ that takes AI use seriously.
 ## 8. Headline takeaway
 
 AI made me dramatically faster at building a working IR system. It
-did not, on its own, make me a better IR engineer. The viva is where
-that distinction gets tested.
+did not, on its own, make me a better IR engineer. The walkthrough
+is where that distinction has to land — having a working build is
+not, by itself, evidence of understanding it.
 
 ---
 
@@ -221,8 +225,9 @@ until I looked at the real data. Both bugs taught one lesson: AI is
 excellent at code that *reads* right; the engineer's job is
 verifying that runtime behaviour matches intent. That's the skill an
 AI-fluent IR course should specifically test — not implementation,
-but diagnosis under distributional uncertainty. The viva measures
-understanding, not output; that's the right place to draw the line."
+but diagnosis under distributional uncertainty. Understanding has
+to show up in this walkthrough, not in the working build alone, and
+that is the right bar."
 
 *Word count: ~1,350 essay + 30-second script. Specific examples
 cited (UA `setdefault`, `<title>` leak, conservative scope,
