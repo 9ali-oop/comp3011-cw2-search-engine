@@ -451,6 +451,76 @@ Observed numbers from the perf tests:
   500 ms, asserted by `TestPerformance::test_find_on_large_index_fast`.
 * Save/load round-trip of 200-doc index - visibly instantaneous.
 
-## 11. Open issues at submission time
+## 11. Full crawl results - 2026-05-12
 
-*(filled in once the full crawl finishes)*
+Live crawl against `https://quotes.toscrape.com/` with 6 s politeness:
+
+| Metric | Value |
+|---|---|
+| Wall-clock time | **21.9 min** (1315 s) |
+| Pages fetched | **214** |
+| Failed / disallowed | **0 / 0** |
+| Unique terms in index | **4,445** |
+| Average tokens per page | 85.2 |
+| Index file size | 694.4 KB |
+| `data/index.json` | UTF-8 JSON, schema version 1 |
+
+Verification (`verify_index.py`) - every check passes:
+
+```
+[ok] page count is in the expected ballpark (>=200)  got 214
+[ok] find 'indifference' returns >=1 hit  got 11
+[ok] find 'good friends' returns >=1 hit  got 19
+[ok] find 'Einstein' returns >=1 hit  got 37
+[ok] full-word: 'friends' result set != 'friendship' result set
+[ok] find 'the' returns 0 hits (stop-word)
+[ok] print 'einstein' returns >=1 posting  got 37 postings
+[ok] boilerplate 'login' not indexed (df==0 expected)
+[ok] boilerplate 'scrape' not indexed
+```
+
+### Observations from the live data
+
+* `213` vs `214` - quotes.toscrape.com has 213 + 1 distinct URLs once
+  you count both the slash-and-no-slash variants of a couple of
+  author pages.  Documented in §3.1 (URL normalisation deliberately
+  treats `/foo` and `/foo/` as distinct because they *can* be
+  different endpoints on a strict server).  No content duplication
+  issue in practice - both variants index the same page and `find`
+  returns them next to each other.
+* Top terms by `df` are dominated by **`tags`** (163) and **`viewing`**
+  (152) because every `/tag/X/page/N/` URL begins with
+  `"Viewing tag: X"`.  These are content, not chrome, so the indexer
+  rightly keeps them.
+* **`description`** (df=50) was suspicious - turned out to be the
+  literal `"Description:"` header on every author bio page.  Genuine
+  content, not a metadata leak.
+* **`login`** and **`scrape`** have `df = 0`, confirming the body-only
+  extraction strips the site-wide `<title>` and the header chrome.
+
+### Sample queries
+
+| Query | Hits | Top result |
+|---|---|---|
+| `find indifference` | 11 | `/tag/indifference/page/1/` |
+| `find Einstein` | 37 | `/author/Albert-Einstein` |
+| `find good friends` | 19 | `/tag/friends/` |
+| `find friendship` | 22 | (full-word; differs from `friends` set) |
+| `find the` | 0 | stop-word filtered |
+| `find xyzzy` | 0 | unknown term |
+
+## 12. Submission checklist
+
+- [x] Source code: `src/{crawler,indexer,search,main}.py`
+- [x] Test suite: `tests/test_*.py` - 136 tests, 98 % coverage
+- [x] Index file: `data/index.json` (694 KB) - to be attached to
+      Minerva separately
+- [x] `requirements.txt`
+- [x] `README.md` with overview, install, usage, testing, architecture
+- [x] `technical_log.md` - this file
+- [x] Public GitHub repository:
+      <https://github.com/9ali-oop/comp3011-cw2-search-engine>
+- [x] GitHub Actions CI green across Python 3.10 / 3.11 / 3.12
+- [ ] 5-minute video (user's responsibility)
+- [ ] GenAI critical reflection in the video (user's responsibility)
+

@@ -120,30 +120,35 @@ quit / exit           leave the shell
 
 ### Sample session
 
+Actual output from a full crawl run on `2026-05-12`:
+
 ```
 $ python -m src.main
 COMP3011 search engine - type 'help' for commands, 'quit' to exit.
 > build
 crawling https://quotes.toscrape.com/ (politeness 6.0s)…
-fetched 213 pages (0 failed, 0 disallowed) in 1278.4s
-indexed 213 pages, 2683 unique terms; saved to data\index.json (612.7 KB)
+fetched 214 pages (0 failed, 0 disallowed) in 1315.0s
+indexed 214 pages, 4445 unique terms; saved to data\index.json (694.4 KB)
 > find indifference
-1 result(s) for 'indifference':
-  [4.812] https://quotes.toscrape.com/tag/love/page/1/
+11 result(s) for 'indifference':
+  [10.848] https://quotes.toscrape.com/tag/indifference/page/1/
+  [10.140] https://quotes.toscrape.com/page/2/
+  [10.140] https://quotes.toscrape.com/tag/activism/page/1/
+  …
 > find good friends
-3 result(s) for 'good friends':
-  [9.843] https://quotes.toscrape.com/page/5/
-  [4.220] https://quotes.toscrape.com/tag/friendship/page/1/
-  [2.107] https://quotes.toscrape.com/page/9/
+19 result(s) for 'good friends':
+  [15.472] https://quotes.toscrape.com/tag/friends/
+  [15.472] https://quotes.toscrape.com/tag/friends/page/1/
+  [14.868] https://quotes.toscrape.com/page/2/
+  …
 > print nonsense
-'nonsense' appears in 2 page(s):
-  doc12  tf=1  positions=[145]  https://quotes.toscrape.com/page/1/
-  doc54  tf=1  positions=[63]   https://quotes.toscrape.com/author/Lewis-Carroll
+'nonsense' appears in 5 page(s):
+  doc12   tf=1  positions=[237]  https://quotes.toscrape.com/tag/life/page/1/
+  doc37   tf=1  positions=[195]  https://quotes.toscrape.com/page/2/
+  …
 > quit
 bye.
 ```
-
-> Exact figures depend on the site at crawl time.
 
 ## Architecture
 
