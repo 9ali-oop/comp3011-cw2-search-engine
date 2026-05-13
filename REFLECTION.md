@@ -216,18 +216,16 @@ not, by itself, evidence of understanding it.
 > Read at a steady ~140 wpm this is exactly 30 seconds.
 
 "I used Claude as a pair-programmer. Two bugs taught me the most.
-The crawler set its User-Agent with `setdefault` — idiomatic,
-plausible, and silently broken because Requests ships a default
-header. I only caught it because my test asserted the runtime value.
-The indexer leaked the `<title>` tag — every page on the corpus had
-the same title, so two words ranked first by document frequency
-until I looked at the real data. Both bugs taught one lesson: AI is
-excellent at code that *reads* right; the engineer's job is
-verifying that runtime behaviour matches intent. That's the skill an
-AI-fluent IR course should specifically test — not implementation,
-but diagnosis under distributional uncertainty. Understanding has
-to show up in this walkthrough, not in the working build alone, and
-that is the right bar."
+The crawler set its User-Agent with `setdefault` — it looked
+idiomatic, but the Requests library already ships its own header,
+so my custom one never actually went out. My test caught it because
+it checked the actual value being sent, not just whether the code
+ran. The indexer was indexing every page's `<title>` tag — and
+every page on the site has the same title, so the same two words
+ranked top by document frequency until I looked at the real data.
+Both taught the same lesson: AI's code can look right at a glance
+and still be wrong. This walkthrough is where I show I understand
+what's running, not just that I shipped it."
 
 *Word count: ~1,350 essay + 30-second script. Specific examples
 cited (UA `setdefault`, `<title>` leak, conservative scope,
